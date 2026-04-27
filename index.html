@@ -2,31 +2,64 @@
 <html>
 <head>
   <title>Engineer Status Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 25px; background: #f5f7fa; }
+    h2 { color: #1f2937; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background: #111827; color: white; }
+    .Available { color: green; font-weight: bold; }
+    .Busy { color: orange; font-weight: bold; }
+    .P1 { color: red; font-weight: bold; }
+    .Leave, .Week, .Not, .Out { color: gray; font-weight: bold; }
+  </style>
 </head>
-<body style="font-family: Arial; padding: 20px;">
+<body>
 
-<h2>Engineer Availability</h2>
+<h2>Engineer Availability Dashboard</h2>
+<p>Live status updated by support team.</p>
 
-<table border="1" cellpadding="10" style="border-collapse: collapse;">
-  <tr>
-    <th>Engineer</th>
-    <th>Status</th>
-    <th>Shift</th>
-  </tr>
-
-  <tr>
-    <td>Vibin</td>
-    <td style="color:green;">Available</td>
-    <td>General</td>
-  </tr>
-
-  <tr>
-    <td>Chethan</td>
-    <td style="color:red;">P1 Call</td>
-    <td>Morning</td>
-  </tr>
-
+<table>
+  <thead>
+    <tr>
+      <th>Engineer</th>
+      <th>Status</th>
+      <th>Shift</th>
+      <th>Last Updated</th>
+      <th>Remarks</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
 </table>
+
+<script>
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQain7Gs1YgKVEaYG7SNp9h5MvkRKwwcywsB50vH2vyBCSF9cM3jiGAQzz3Zohnlsm2bZJZO28qaRQw/pub?output=csv";
+
+fetch(sheetUrl)
+  .then(response => response.text())
+  .then(data => {
+    const rows = data.trim().split("\n").slice(1);
+    let html = "";
+
+    rows.forEach(row => {
+      const cols = row.split(",");
+      if (cols.length >= 3) {
+        const status = cols[1].replaceAll('"', '').trim();
+        html += `
+          <tr>
+            <td>${cols[0].replaceAll('"', '')}</td>
+            <td class="${status.split(' ')[0]}">${status}</td>
+            <td>${cols[2] ? cols[2].replaceAll('"', '') : ""}</td>
+            <td>${cols[3] ? cols[3].replaceAll('"', '') : ""}</td>
+            <td>${cols[4] ? cols[4].replaceAll('"', '') : ""}</td>
+          </tr>
+        `;
+      }
+    });
+
+    document.getElementById("tableBody").innerHTML = html;
+  });
+</script>
 
 </body>
 </html>
