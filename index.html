@@ -35,23 +35,58 @@
 <script>
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQain7Gs1YgKVEaYG7SNp9h5MvkRKwwcywsB50vH2vyBCSF9cM3jiGAQzz3Zohnlsm2bZJZO28qaRQw/pub?output=csv";
 
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = "", insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && insideQuotes && next === '"') {
+      cell += '"';
+      i++;
+    } else if (char === '"') {
+      insideQuotes = !insideQuotes;
+    } else if (char === "," && !insideQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !insideQuotes) {
+      if (cell || row.length) {
+        row.push(cell);
+        rows.push(row);
+        row = [];
+        cell = "";
+      }
+    } else {
+      cell += char;
+    }
+  }
+
+  if (cell || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
 fetch(sheetUrl)
   .then(response => response.text())
   .then(data => {
-    const rows = data.trim().split("\n").slice(1);
+    const rows = parseCSV(data).slice(1);
     let html = "";
 
-    rows.forEach(row => {
-      const cols = row.split(",");
-      if (cols.length >= 3) {
-        const status = cols[1].replaceAll('"', '').trim();
+    rows.forEach(cols => {
+      if (cols.length >= 3 && cols[0].trim() !== "") {
+        const status = cols[1].trim();
         html += `
           <tr>
-            <td>${cols[0].replaceAll('"', '')}</td>
+            <td>${cols[0]}</td>
             <td class="${status.split(' ')[0]}">${status}</td>
-            <td>${cols[2] ? cols[2].replaceAll('"', '') : ""}</td>
-            <td>${cols[3] ? cols[3].replaceAll('"', '') : ""}</td>
-            <td>${cols[4] ? cols[4].replaceAll('"', '') : ""}</td>
+            <td>${cols[2] || ""}</td>
+            <td>${cols[3] || ""}</td>
+            <td>${cols[4] || ""}</td>
           </tr>
         `;
       }
